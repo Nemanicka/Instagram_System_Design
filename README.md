@@ -25,14 +25,13 @@ General
 * Publishing posts should be fast
     * Fanning out a post to all of your followers should be fast unless you have millions of followers
 * 1 billion active users
-* **Every post receives 50 likes**
-* **Every post receives 5 comments**
-* 500 million posts per day or 15 billion posts per month
+* **Every post receives 50 likes over 3 days**
+* **Every post receives 5 comments over 3 days**
+* 50 million posts per day or 1.5 billion posts per month
     * Each post averages a fanout of 50 deliveries
-    * 5 billion total posts delivered on fanout per day
-    * 150 billion posts delivered on fanout per month
-* 250 billion read requests per month
-* 10 billion searches per month
+    * 2.5 billion total posts delivered on fanout per day
+    * 75 billion posts delivered on fanout per month
+* 250 billion timeline read requests per month
 
 Timeline
 
@@ -45,36 +44,66 @@ Timeline
 
 
 ------------------#### Calculate usage------------------
+(Neo4j is assumed as GraphDB, but it might be a bad choice)
 
 * Size per post:
-    * `tweet_id` - 8 bytes
-    * `user_id` - 32 bytes
-    * `text` - 140 bytes
-    * `media` - 10 KB average
-    * Total: ~10 KB
+    * Graph DB:
+        * Node: 15B
+        * Node property "id": 41B
+        * Relation "Created": 34B
+        * Relation property "timestamp": 41B
+    * NoSQL DB:
+        * "id": 16B
+        * "picURL": 64B,
+        * "text": 1KB 
+    * Object Store: 100KB per image
+    * **Total**: 100KB in Object Store + 1211B in DBs.
 * Size per comment:
+    * Graph DB:
+        * Node: 15B
+        * Node property "id": 41B
+        * Relation "Created": 34B
+        * Relation property "timestamp": 41B
+        * Relation "Received": 34B
+        * Relation property "timestamp": 41B
+    * NoSQL DB:
+        * "id": 16B
+        * "text": 300B 
+    * **Total**: 522B in DBs
 * Size per user:
+    * Graph DB:
+        * Node: 15B
+        * Node property "id": 41B
+    * NoSQL DB:
+        * "id": 16B
+        * "profilePicUrl": 64B
+        * "login": 16B
+        * "password": 64B
+    * Object Store: 10KB
+    * **Total**: 10KB Object Store + 216B in DBs
+* Size per like:
+    * Graph DB:
+        * Relation "Liked": 34B
+        * Relation property "timestamp": 41B
+        * **Total**: 75B in DB
+* Size per "follow" action:
+    * Graph DB:
+        * Relation "Created": 34B
+        * Relation property "timestamp": 41B
+        * **Total**: 75B in DB
 * Monthly size of content:
+    * 1B Users (constant) = 1,000,000,000 * (216B in DB + 10Kb in Object Store) = 216GB in DBs + 10TB in Object Store
+    * Follows (constant) = 50 * 1,000,000,000 * 75 = 3,7 TB
+    * Posts = 1,500,000,000 * (1211B in DB + 100KB in Object Store) = 1,8 TB DB + 150TB in Object Store
+    * Comments = 5*1,500,000,000*522B = 3,9 TB in DB
+    * Likes = 50 * 1,500,000,000 * 75 = 5.6 TB
+    * **Total** = 15.2TB in DBs + 160TB in Object Store
+ * RPS:
+     * ~ 578 post writes per second
+     * ~ 3K inserts into feed per second
+     * ~ 96,450 timeline reads per second
+    
 
-* 
-* 150 TB of new tweet content per month
-    * 10 KB per tweet * 500 million tweets per day * 30 days per month
-    * 5.4 PB of new tweet content in 3 years
-* 100 thousand read requests per second
-    * 250 billion read requests per month * (400 requests per second / 1 billion requests per month)
-* 6,000 tweets per second
-    * 15 billion tweets per month * (400 requests per second / 1 billion requests per month)
-* 60 thousand tweets delivered on fanout per second
-    * 150 billion tweets delivered on fanout per month * (400 requests per second / 1 billion requests per month)
-* 4,000 search requests per second
-    * 10 billion searches per month * (400 requests per second / 1 billion requests per month)
-
-Handy conversion guide:
-
-* 2.5 million seconds per month
-* 1 request per second = 2.5 million requests per month
-* 40 requests per second = 100 million requests per month
-* 400 requests per second = 1 billion requests per month
 -------------------------------------------------------------------------------------
 
 ### Storage
@@ -85,14 +114,13 @@ brings the logic identical to the following/followed mechanics. Therefore, the s
 is to store Users, Posts, and Comments as *nodes* in GraphDB, while using such relations as "Created" and "Liked" as edges.
 All metadata, such as post content, or user pic, can be stored in NoSQL DB, since having 15b monthly posts + 5 comments 
 on each post might be problematic for SQL Dbs.
-https://graphaware.com/neo4j/2014/07/23/node-degrees-neo4j.html
 
 
 ## Step 2: A high-level design
 
 ![High Level Architecture](https://i.imgur.com/soAucVL.png)
 
-![NoSQL Data Layout](https://i.imgur.com/5WOfXTE.png)
+![NoSQL Data Layout](https://i.imgur.com/pxahPgh.png)
 
 ![Graph DB Data Layout](https://i.imgur.com/W0FaPdi.png)
 
