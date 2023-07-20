@@ -42,8 +42,7 @@ Timeline
 * Ingesting posts is write heavy
 * The timeline is chronological
 
-
-------------------#### Calculate usage------------------
+### Storage usage
 (Neo4j is assumed as GraphDB, but it might be a bad choice)
 
 * Size per post:
