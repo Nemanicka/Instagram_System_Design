@@ -123,7 +123,17 @@ on each post might be problematic for SQL Dbs.
 
 ![Graph DB Data Layout](https://i.imgur.com/W0FaPdi.png)
 
-### Use case: User creates a post
+### SPOFs
+
+Assuming that SPOF should lead to the complete failure of the service, according to the diagram such services are Web Server and Load Balancer.
+
+### Bottlenecks
+
+The Write bottlenecks can be: Fan Out service, which might not be able to write posts with the required speed, or (and) poorly configured/scaled Memory DB, which would not be able to process write requests. Also, the Graph Caching service might not be able to keep in memory required nodes, which will lead to reading from disk and therefore slow writes to memory db (since we're relying on the in-memory graph)
+
+The Read bottlenecks can be: Graph Caching service - we're heavily relying on the in-memory graph, or poor performance of NoSQL DBs for retrieving metadata.
+
+### Use case: The user creates a post
 
 **Request:**
 
